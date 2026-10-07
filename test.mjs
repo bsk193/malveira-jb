@@ -153,7 +153,7 @@ test('exact firmware gate and no override', async () => {
     vm.runInNewContext(code, context);
     assert.equal(loads,0);
     if (version === '13.52') { handlers.cached(); handlers.noupdate(); assert.equal(loads,1); }
-    else { assert.match(nodes.message.textContent,/requires/); assert.equal(Object.keys(handlers).length,0); }
+    else { assert.match(nodes.message.textContent,/13\.52/); assert.equal(Object.keys(handlers).length,0); }
     assert.equal(!!offsetsFor(context.navigator.userAgent).off, version === '13.52');
   }
 });

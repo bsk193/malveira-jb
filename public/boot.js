@@ -29,7 +29,12 @@
   var firmware = document.getElementById('firmware');
   firmware.textContent = 'Detected FW: ' + (match ? match[1] + '.' + match[2] : 'Unknown') + ' · ' + (supported ? 'Supported' : 'Unsupported');
   firmware.className = supported ? 'supported' : 'unsupported';
-  if (!supported) { say('This page requires PS4 firmware 13.52.'); progress('Unsupported firmware',null,true); return; }
+  if (!supported) {
+    var warning = document.getElementById('unsupported');
+    warning.textContent = match ? 'Detected firmware: ' + match[1] + '.' + match[2] + '. Unsupported — PS4 13.52 is required.' : 'PS4 firmware could not be detected. Only PS4 13.52 is supported.';
+    warning.hidden = false;
+    say(warning.textContent); progress('Unsupported firmware',null,true); return;
+  }
   window.hostEvent = function (tag, detail) {
     if (tag === 'CONSOLE-SETUP') {
       var job = JSON.parse(detail); say(job.message); progress(job.stage,job.progress,job.failed); return;
