@@ -1,3 +1,4 @@
+import {alreadyJailbroken} from './jailbreak-status.js';
 import {createTransport, setupConsole} from './console-setup.js';
 import { establishPrimitive } from "./core.js";
 import { installWindowP, pairStatus } from "./mem.js";
@@ -94,6 +95,7 @@ function check(name, ok, detail) {
 const SYS = {
   getpid: 20,
   getuid: 0x18,
+  setuid: 23,
   close: 6,
   socket: 97,
   socketpair: 0x87,
@@ -546,15 +548,16 @@ let allDone = false,
     // risk; a cheap getuid/setuid pair decides it up front, before any
     // heavy spray allocations. (Same guard as GamerHack slopkit chain.)
     try {
-      const uid0 = sc(SYS.getuid).i32;
-      const su0 = sc(SYS.setuid, 0).i32;
-      if (uid0 === 0 || su0 === 0) {
+      if (alreadyJailbroken(sc, SYS)) {
         consoleReady = true;
-        mark("ALREADY-ROOT", "getuid=" + uid0 + " setuid(0)=" + su0);
-        state("ALREADY JAILBROKEN -- nothing to do", "ok");
+        mark('ALREADY-ROOT', 'Existing jailbreak confirmed');
+        state('ALREADY JAILBROKEN', 'ok');
         return;
       }
-    } catch (e) {}
+    } catch (error) {
+      mark('ERROR', 'Jailbreak detection failed: ' + error.message);
+      return; // Never rerun the kernel stage after a detection exception.
+    }
 
     const scratchAb = new ArrayBuffer(0x1000);
     keepAlive.push(scratchAb);
@@ -3385,7 +3388,7 @@ let allDone = false,
         (allDone ? "" : "  INCOMPLETE"),
     );
     try {
-      finishUI(payloadRunning);
+      finishUI(payloadRunning || consoleReady);
     } catch (eUI) {}
   }
 })();

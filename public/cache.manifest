@@ -1,9 +1,10 @@
 CACHE MANIFEST
-# jb1352-minimal-v9-unsupported-firmware
+# jb1352-minimal-v10-existing-jailbreak
 CACHE:
 index.html
 jb.html
 boot.js
+jailbreak-status.js
 console-setup.js
 jb.js
 core.js

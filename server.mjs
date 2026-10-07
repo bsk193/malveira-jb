@@ -240,7 +240,7 @@ export function createServer() {
       if (!['GET','HEAD'].includes(req.method)) return respond(405, {});
       const packageName = /^\/packages\/(pkg-manager-x_[a-zA-Z0-9._-]+_ps4-tile\.pkg)$/.exec(url.pathname);
       const publicName = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).slice(1);
-      const allowed = ['index.html','jb.html','boot.js','console-setup.js','cache.manifest','jb.js','core.js','mem.js','int64.js','rpc_worker.js','ps4_offsets.js','goldhen.bin','patches/1352.bin'];
+      const allowed = ['index.html','jb.html','boot.js','jailbreak-status.js','console-setup.js','cache.manifest','jb.js','core.js','mem.js','int64.js','rpc_worker.js','ps4_offsets.js','goldhen.bin','patches/1352.bin'];
       if (!packageName && !allowed.includes(publicName)) return respond(404, {});
       const file = packageName ? path.join(assets,packageName[1]) : path.join(root,'public',publicName);
       const info = await stat(file); let start = 0, end = info.size - 1, code = 200;

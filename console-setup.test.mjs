@@ -58,3 +58,18 @@ test('installed version comparison accepts the real PS4 v prefix',()=>{
  assert.equal(compare('v01.01','01.02'),-1);
  assert.throws(()=>compare('unknown','01.02'));
 });
+
+test('existing jailbreak skips credential mutation and detects non-root HEN without hiding errors',async()=>{
+ const {alreadyJailbroken}=await import('./public/jailbreak-status.js');
+ const sys={getuid:24,setuid:23};
+ let calls=[];
+ assert.equal(alreadyJailbroken((n)=>{calls.push(n);return {i32:0};},sys),true);
+ assert.deepEqual(calls,[24]);
+ for(const result of [0,-1]){
+  calls=[];
+  assert.equal(alreadyJailbroken((n,arg)=>{calls.push([n,arg]);return {i32:n===24?1000:result};},sys),result===0);
+  assert.deepEqual(calls,[[24,undefined],[23,0]]);
+ }
+ assert.throws(()=>alreadyJailbroken(()=>{throw Error('bridge failure');},sys),/bridge failure/);
+ assert.throws(()=>alreadyJailbroken(()=>({i32:0}),{getuid:24}),/Missing/);
+});
