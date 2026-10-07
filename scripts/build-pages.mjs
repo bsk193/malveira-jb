@@ -36,8 +36,23 @@ await writeFile(out+'pages-mode.js','window.PS4_STANDALONE = true;\n');
 for(const name of ['index.html','jb.html']){
   let html=await readFile(out+name,'utf8');html=html.replace('<script src="boot.js">','<script src="pages-mode.js"></script><script src="boot.js">');await writeFile(out+name,html);
 }
+// Separate uncached URLs avoid an older AppCache swallowing a query-only diagnostic request.
+await mkdir(out+'diagnostics',{recursive:true});
+for (const entry of await readdir(root+'public',{withFileTypes:true})) {
+  if (entry.name === 'cache.manifest') continue;
+  await cp(root+'public/'+entry.name,out+'diagnostics/'+entry.name,{recursive:true});
+}
+const diagnosticConfig=JSON.parse(await readFile(out+'manager.json','utf8'));
+diagnosticConfig.elf='../'+diagnosticConfig.elf; diagnosticConfig.tile='../'+diagnosticConfig.tile;
+await writeFile(out+'diagnostics/manager.json',JSON.stringify(diagnosticConfig));
+for (const name of ['index.html','jb.html']) {
+  let html=await readFile(out+'diagnostics/'+name,'utf8');
+  html=html.replace(' manifest="cache.manifest"','').replace('<script src="boot.js">','<script>window.PS4_STANDALONE=true;window.PS4_DIAGNOSTICS=true;</script><script src="boot.js">');
+  html=html.replace('<p id="diagnostics" role="status" hidden></p>','<p id="diagnostics" role="status">Diagnostics loading…</p>');
+  await writeFile(out+'diagnostics/'+name,html);
+}
 await writeFile(out+'.nojekyll','');
-const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll').sort();
+const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!n.startsWith('diagnostics/')).sort();
 const hash=createHash('sha256');for(const name of files){hash.update(name);hash.update(await readFile(out+name));}
 await writeFile(out+'cache.manifest','CACHE MANIFEST\n# '+hash.digest('hex')+'\nCACHE:\n'+files.join('\n')+'\nNETWORK:\n*\n');
 console.log('Built Pages '+release.tag_name+'; tile '+meta.app_version+'; '+files.length+' cached files.');
