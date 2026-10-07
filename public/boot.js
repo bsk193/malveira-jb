@@ -5,7 +5,7 @@
   var retryButton = document.getElementById('retry');
   retryButton.onclick = function () { if (window.PS4_STANDALONE) { location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); return; } if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); };
   var diagnostics = window.PS4_DIAGNOSTICS === true || /(?:[?&])diagnostics=1(?:&|$)/.test(location.search || '');
-  function say(s) { message.textContent = s; if (diagnostics) { var detail = document.getElementById('diagnostics'); detail.hidden = false; detail.textContent = s; } }
+  function say(s) { message.textContent = s; if (diagnostics) { var detail = document.getElementById('diagnostics'); detail.hidden = false; detail.textContent = (window.PS4_DIAGNOSTIC_BUILD ? '[' + window.PS4_DIAGNOSTIC_BUILD + '] ' : '') + s; } }
   if (diagnostics) say('Diagnostics active — preparing…');
   function progress(label, value, failed) {
     var stage = document.getElementById('stage');

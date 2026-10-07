@@ -51,8 +51,21 @@ for (const name of ['index.html','jb.html']) {
   html=html.replace('<p id="diagnostics" role="status" hidden></p>','<p id="diagnostics" role="status">Diagnostics loading…</p>');
   await writeFile(out+'diagnostics/'+name,html);
 }
+// A new directory for each diagnostic build bypasses both HTTP and module caches.
+const diagnosticHash=createHash('sha256');
+for(const name of ['boot.js','jb.js','console-setup.js','jailbreak-status.js'])diagnosticHash.update(await readFile(root+'public/'+name));
+const diagnosticId=diagnosticHash.digest('hex').slice(0,12);
+const diagnosticDirectory='diagnostics-'+diagnosticId;
+await cp(out+'diagnostics',out+diagnosticDirectory,{recursive:true});
+for(const name of ['index.html','jb.html']){
+  const path=out+diagnosticDirectory+'/'+name;
+  let html=await readFile(path,'utf8');
+  html=html.replace('window.PS4_DIAGNOSTICS=true;','window.PS4_DIAGNOSTICS=true;window.PS4_DIAGNOSTIC_BUILD="'+diagnosticId+'";');
+  await writeFile(path,html);
+}
+await writeFile(out+'diagnostic-build.json',JSON.stringify({build:diagnosticId,url:diagnosticDirectory+'/jb.html'}));
 await writeFile(out+'.nojekyll','');
-const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!n.startsWith('diagnostics/')).sort();
+const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!/^diagnostics(?:-|\/)/.test(n)).sort();
 const hash=createHash('sha256');for(const name of files){hash.update(name);hash.update(await readFile(out+name));}
 await writeFile(out+'cache.manifest','CACHE MANIFEST\n# '+hash.digest('hex')+'\nCACHE:\n'+files.join('\n')+'\nNETWORK:\n*\n');
 console.log('Built Pages '+release.tag_name+'; tile '+meta.app_version+'; '+files.length+' cached files.');
