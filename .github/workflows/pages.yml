@@ -20,6 +20,8 @@ jobs:
           node-version: '22'
       - run: node --test test.mjs console-setup.test.mjs
       - run: node scripts/build-pages.mjs --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

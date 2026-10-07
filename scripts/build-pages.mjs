@@ -6,8 +6,10 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const out=root+'_site/';
 let release=JSON.parse(await readFile(root+'assets/release.json','utf8'));
 if(process.argv.includes('--latest')) {
-  const response=await fetch('https://api.github.com/repos/bsk193/pkg-manager-x/releases/latest');
-  if(!response.ok)throw Error('Release check failed');
+  const headers={'Accept':'application/vnd.github+json','User-Agent':'malveira-jb-pages'};
+  if(process.env.GH_TOKEN)headers.Authorization='Bearer '+process.env.GH_TOKEN;
+  const response=await fetch('https://api.github.com/repos/bsk193/pkg-manager-x/releases/latest',{headers,signal:AbortSignal.timeout(30000)});
+  if(!response.ok)throw Error('Release check failed: HTTP '+response.status);
   const latest=await response.json();
   if(!latest.draft&&!latest.prerelease&&compareVersions(latest.tag_name,release.tag_name)>=0)release=latest;
 }
