@@ -1,4 +1,4 @@
-# Malveira JB PS4
+# Malveira JB
 
 PS4 13.52 host with three progress segments, an icon retry button, and a green checkmark after PKG Manager tile verification.
 
@@ -8,13 +8,17 @@ Site: https://bsk193.github.io/malveira-jb/
 
 The Pages build enables console-local setup. After the existing jailbreak chain finishes its kernel cleanup, a userland syscall bridge sends the bundled PS4 ELF to GoldHEN BinLoader at 127.0.0.1:9090 and talks to PKG Manager at 127.0.0.1:8844. No PC or home-lab service is required by this implementation. GoldHEN BinLoader must be enabled. Refused connections are retried for up to 30 seconds; payloads are not resent after an ambiguous transfer.
 
-This console-local transport is new and has not yet been validated on PS4 hardware. Automated tests cover protocol parsing, refusal/partial-write behavior, install/check orchestration, and UI state. They do not prove the native ABI or browser stability on the console. The previously tested Node-hosted version remains available in the original local project.
+User testing on PS4 13.52 confirmed fresh jailbreaks with and without an installed tile, reopening with an installed tile, and already-jailbroken bootstrap without a tile after switching to the PS4 SO_NBIO socket option. The automated suite additionally checks protocol parsing, version handling, retry behavior and UI transitions. This does not guarantee every exploit attempt succeeds.
 
 Reopening still needs the browser primitive for native loopback access; the existing already-root guard skips the kernel exploit when active. If an older manager is running, restart the console normally before updating. Success is shown only after the installed tile version is confirmed.
 
+## Diagnostics
+
+Open https://bsk193.github.io/malveira-jb/diagnostics/ online. It redirects to the latest build-specific diagnostic page to avoid stale scripts. The status text includes a build ID. Normal usage remains text-free except for unsupported-firmware notices.
+
 ## Offline cache
 
-Open the root site online first and allow the cache to complete. AppCache stores the HTML, scripts, GoldHEN, firmware patch, manager configuration, ELF and tile. The cache manifest contains a content hash, so deployments refresh it when files change. Offline jailbreak and launching/checking the cached manager are supported by the implementation, subject to PS4 validation and browser cache retention.
+Open the root site online first and allow the cache to complete. AppCache stores the HTML, scripts, GoldHEN, firmware patch, manager configuration, ELF and tile. The cache manifest contains a content hash, so deployments refresh it when files change. Offline jailbreak and launching/checking the cached manager are supported by the implementation, subject to browser cache retention; offline operation still needs a dedicated console test.
 
 A fresh tile install/update still requires internet: the manager downloads its PKG from the Pages URL, and its native HTTP client cannot read the browser's AppCache. Caching the PKG in the browser does not change that. If the tile is already current, setup requires only console-local calls. Release update discovery also requires internet. Do not clear website data if you want to retain the offline cache.
 
@@ -33,3 +37,7 @@ Run node server.mjs with Node.js 22+ or ./Start.ps1 on Windows. The source publi
 ## Credits
 
 Host based on psx8/psx8.github.io (1352 directory); GoldHEN by SiSTRo and contributors; PKG Manager X by bsk193 and contributors, based on PLK's PKG Manager. See PROVENANCE.txt and assets/release.json. The inherited kernel exploit and GoldHEN binary are unchanged; Pages setup adds console-local package orchestration after kernel cleanup.
+
+## Local workspace
+
+The active checkout is malveira-jb. Earlier host versions, reference source, troubleshooting logs and old bundles are preserved in .local-archive, which is excluded from Git, Docker and Pages. Separate PKG Manager and unrelated projects are not part of this archive.

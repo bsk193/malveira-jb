@@ -5,3 +5,5 @@ assets/*.part
 .env.*
 
 _site/
+
+.local-archive/

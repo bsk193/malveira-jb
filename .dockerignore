@@ -2,3 +2,6 @@
 .github
 *.log
 node_modules
+
+.local-archive
+_site

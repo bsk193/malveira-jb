@@ -64,6 +64,9 @@ for(const name of ['index.html','jb.html']){
   await writeFile(path,html);
 }
 await writeFile(out+'diagnostic-build.json',JSON.stringify({build:diagnosticId,url:diagnosticDirectory+'/jb.html'}));
+// Stable entry point resolves a fresh, content-addressed diagnostic build.
+await writeFile(out+'diagnostics/index.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Malveira diagnostics</title><style>body{background:#101218;color:#eef0f6;font:20px Arial;text-align:center;padding:20vh 24px}</style><p id="status">Opening current diagnostics…</p><script>(function(){var r=new XMLHttpRequest();r.open('GET','../diagnostic-build.json?t='+Date.now());r.timeout=10000;function fail(){document.getElementById('status').textContent='Could not load diagnostics. Connect to the internet and reload.';}r.onload=function(){try{var d=JSON.parse(r.responseText);if(r.status!==200||!/^diagnostics-[a-f0-9]{12}\\/jb\\.html$/.test(d.url))throw Error();location.replace('../'+d.url);}catch(e){fail();}};r.onerror=r.ontimeout=fail;r.send();})();</script></html>`);
+
 await writeFile(out+'.nojekyll','');
 const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!/^diagnostics(?:-|\/)/.test(n)).sort();
 const hash=createHash('sha256');for(const name of files){hash.update(name);hash.update(await readFile(out+name));}
