@@ -102,6 +102,8 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
 }
 
 export function compare(a, b) {
+  a = String(a).trim().replace(/^v/i, '');
+  b = String(b).trim().replace(/^v/i, '');
   if (!/^\d+(\.\d+)*$/.test(a) || !/^\d+(\.\d+)*$/.test(b)) throw Error('Invalid installed version');
   const x = a.split('.').map(Number), y = b.split('.').map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0) ? 1 : -1;

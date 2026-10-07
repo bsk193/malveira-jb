@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseResponse,createTransport,setupConsole} from './public/console-setup.js';
+import {parseResponse,createTransport,setupConsole,compare} from './public/console-setup.js';
 const config={version:'1.0.2',appVersion:'01.02',elf:'manager.elf',elfSize:4,tile:'https://example.test/tile.pkg'};
 test('manager HTTP parser handles framing and rejects errors/truncation',()=>{
   assert.equal(parseResponse('HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n1.0.2'),'1.0.2');
@@ -14,7 +14,7 @@ test('console setup skips current tiles, resumes jobs and verifies installation 
     const notices=[];let installs=0,checks=0,loads=0;
     const transport={payload:async()=>loads++,request:async(path)=>{
       if(path==='/api/version')return mode==='old-manager'?'1.0.1':'1.0.2';
-      if(path==='/api/upload/check'){checks++;return {can_install:true,is_installed:mode==='installed'||(checks>1&&mode!=='unconfirmed'),installed_version:'01.02'};}
+      if(path==='/api/upload/check'){checks++;return {can_install:true,is_installed:mode==='installed'||(checks>1&&mode!=='unconfirmed'),installed_version:'v01.02'};}
       if(path==='/api/install'){installs++;return {success:true};}
       if(path==='/api/status')return {is_installing:mode==='resume',pkg_path:config.tile,completed:true,failed:mode==='failed'};
       throw Error('Unexpected API path');
@@ -29,7 +29,7 @@ test('manager bootstrap sends one payload and waits for its version',async()=>{
   let versions=0,loads=0;
   await setupConsole({config,notify:()=>{},wait:async()=>{},fetchBytes:async()=>new Uint8Array([127,69,76,70]),transport:{payload:async()=>loads++,request:async(path)=>{
     if(path==='/api/version'){if(++versions<3)throw Error('Not ready');return '1.0.2';}
-    if(path==='/api/upload/check')return {is_installed:true,installed_version:'01.02'};
+    if(path==='/api/upload/check')return {is_installed:true,installed_version:'v01.02'};
     throw Error('Unexpected request');
   }}});
   assert.equal(loads,1);assert.equal(versions,3);
@@ -50,4 +50,11 @@ test('native transport retries refused connections only and handles partial writ
     else{await assert.rejects(transport.payload(new Uint8Array(7)),/send failed/);assert.equal(sockets,1);assert.equal(waits,0);}
     assert.equal(closed,sockets);
   }
+});
+
+test('installed version comparison accepts the real PS4 v prefix',()=>{
+ assert.equal(compare('v01.02','01.02'),0);
+ assert.equal(compare('v01.03','01.02'),1);
+ assert.equal(compare('v01.01','01.02'),-1);
+ assert.throws(()=>compare('unknown','01.02'));
 });
