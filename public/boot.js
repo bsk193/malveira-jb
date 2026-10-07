@@ -90,7 +90,7 @@
         progress(job.stage || 'Package setup', job.progress, job.failed);
         if (!job.done) setTimeout(poll, 2500);
         else if (job.failed) {
-          var retry = document.getElementById('retry'); retry.hidden = false; retry.textContent = '\u21bb';
+          var retry = document.getElementById('retry'); retry.hidden = false;
           retry.onclick = function (e) {e.preventDefault(); retry.hidden = true; progress('Package setup',null); packageSetup(true);};
         }
       }
