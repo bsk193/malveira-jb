@@ -30,9 +30,9 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
     const fd = sc(97, 2, 1, 0).i32;
     if (fd < 0) throw fail('Socket creation failed');
     try {
-      // F_GETFL/F_SETFL is denied in the PS4 browser context. Use the socket ioctl.
+      // PS4 SDK SO_NBIO avoids browser-restricted fcntl/ioctl calls.
       const nonblock = new ArrayBuffer(4); new DataView(nonblock).setInt32(0, 1, true);
-      if (sc(54, fd, 0x8004667e, address(nonblock)).i32 < 0) throw fail('Nonblocking socket ioctl failed');
+      if (sc(105, fd, 0xffff, 0x1200, address(nonblock), 4).i32 < 0) throw fail('Socket SO_NBIO failed');
       const sa = new Uint8Array(16); sa[0] = 16; sa[1] = 2; sa[2] = port >>> 8; sa[3] = port & 255; sa[4] = 127; sa[7] = 1;
       const rc = sc(98, fd, address(sa.buffer), 16).i32;
       if (rc < 0) {
@@ -61,7 +61,7 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
     let offset = 0, deadline = now() + 20000;
     while (offset < bytes.length) {
       const count = Math.min(block.length, bytes.length - offset); block.set(bytes.subarray(offset, offset + count));
-      const n = sc(133, fd, ptr, count, 0x4000, 0, 0).i32; // MSG_NOSIGNAL
+      const n = sc(133, fd, ptr, count, 0x20000, 0, 0).i32; // MSG_NOSIGNAL
       if (n > 0) { offset += n; deadline = now() + 20000; }
       else if (n < 0 && errno() !== 35 && errno() !== 4) throw fail('Loopback send failed');
       else if (now() >= deadline) throw Error('Loopback send timed out');

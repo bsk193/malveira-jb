@@ -74,18 +74,18 @@ test('existing jailbreak skips credential mutation and detects non-root HEN with
  assert.throws(()=>alreadyJailbroken(()=>({i32:0}),{getuid:24}),/Missing/);
 });
 
-test('browser sockets use FIONBIO instead of denied fcntl and close on ioctl failure',async()=>{
+test('browser sockets use PS4 SO_NBIO and close on option failure',async()=>{
  for(const denied of [false,true]){
   let closed=0,nonblock=0;
   const transport=createTransport({address:b=>b,errno:()=>13,wait:async()=>{},sc:(num,...args)=>{
-   assert.notEqual(num,92,'Browser fcntl must not be called');
+   assert.notEqual(num,92,'Browser fcntl must not be called');assert.notEqual(num,54,'Browser ioctl must not be called');
    if(num===97)return {i32:7};
-   if(num===54){nonblock++;assert.equal(args[1],0x8004667e);assert.equal(new DataView(args[2]).getInt32(0,true),1);return {i32:denied?-1:0};}
-   if(num===133)return {i32:args[2]};
+   if(num===105){nonblock++;assert.equal(args[1],0xffff);assert.equal(args[2],0x1200);assert.equal(new DataView(args[3]).getInt32(0,true),1);assert.equal(args[4],4);return {i32:denied?-1:0};}
+   if(num===133){assert.equal(args[3],0x20000);return {i32:args[2]};}
    if(num===6)closed++;
    return {i32:0};
   }});
-  if(denied)await assert.rejects(transport.payload(new Uint8Array(4)),/ioctl failed.*13/);
+  if(denied)await assert.rejects(transport.payload(new Uint8Array(4)),/SO_NBIO failed.*13/);
   else await transport.payload(new Uint8Array(4));
   assert.equal(nonblock,1);assert.equal(closed,1);
  }

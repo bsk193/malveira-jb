@@ -118,7 +118,7 @@ const SYS = {
   kill: 37,
   getppid: 39,
 };
-if (window.PS4_STANDALONE) Object.assign(SYS, {read:3,ioctl:54,connect:98,sendto:133,poll:209});
+if (window.PS4_STANDALONE) Object.assign(SYS, {read:3,connect:98,sendto:133,poll:209});
 const JSVALUE_UNDEFINED = new int64(0x0a, 0xfffffff7);
 const keepAlive = [];
 let mainMf = null,
