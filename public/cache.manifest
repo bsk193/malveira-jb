@@ -1,0 +1,18 @@
+CACHE MANIFEST
+# jb1352-minimal-v7-three-step-ui
+CACHE:
+index.html
+jb.html
+boot.js
+jb.js
+core.js
+mem.js
+int64.js
+rpc_worker.js
+ps4_offsets.js
+goldhen.bin
+patches/1352.bin
+NETWORK:
+*
+
+

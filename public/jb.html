@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Malveira Desbloqueada</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#101218;color:#eef0f6;font-family:Arial,sans-serif}
+main{position:absolute;top:45%;left:10%;width:80%;text-align:center}
+#progress{width:540px;max-width:100%;margin:0 auto;display:flex;gap:12px}
+.segment{flex:1;height:14px;background:#282e3a;border-radius:7px;overflow:hidden;position:relative;margin:0 5px}
+.segment.done{background:#64dba0}.segment.active{background:#527de0}.segment.active:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:#a8c6ff;animation:pulse 1.5s ease-in-out infinite}.segment.error{background:#e46b76}
+@keyframes pulse{0%,100%{opacity:.12}50%{opacity:.75}}
+#success{width:72px;height:72px;border-radius:50%;background:#183e30;margin:36px auto 0;border:2px solid #64dba0}
+#success:after{content:"";display:block;width:18px;height:34px;border:solid #64dba0;border-width:0 6px 6px 0;transform:rotate(45deg);margin:13px auto 0}
+#retry{display:block;width:68px;height:60px;margin:36px auto 0;background:#202938;border:2px solid #61799b;border-radius:14px;color:#dbe9ff;font-size:38px;line-height:48px;cursor:pointer}
+#retry:focus,#retry:hover{outline:3px solid #c7dbff;outline-offset:5px;background:#304364}
+[hidden],#retry[hidden],#success[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#out,#state{display:none}
+</style>
+<main>
+<div id="progress" role="group" aria-label="Jailbreak progress">
+<div id="step0" class="segment active" role="img" aria-label="Browser exploit"></div>
+<div id="step1" class="segment" role="img" aria-label="Jailbreak"></div>
+<div id="step2" class="segment" role="img" aria-label="PKG Manager installation or check"></div>
+</div>
+<div id="success" role="img" aria-label="Success" hidden></div>
+<button id="retry" type="button" aria-label="Retry" hidden>&#8635;</button>
+<div class="sr"><span id="firmware"></span><span id="stage"></span><span id="percent"></span><span id="message" role="status" aria-live="polite">Preparing</span></div>
+</main>
+<div id="out"></div><div id="state"></div><script src="boot.js"></script>
+</html>

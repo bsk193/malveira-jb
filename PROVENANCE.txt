@@ -1,0 +1,4 @@
+Host source commit: ea85cfe4434ddc38943a9cb12e255a2b2a64a190
+PKG Manager X source/release commit: 7ec4575be7d610f1fd2c03376b0f8798e5b0e117 (x-v1.0.2)
+GoldHEN SHA256: df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12
+Custom modifications: minimal UI and offline auto-launch; strict 13.52 gate; local status callbacks and terminal completion callback; Node companion for official PKG Manager release loading, install and version checking.
