@@ -3,8 +3,9 @@
   var message = document.getElementById('message'), started = false, ready = false, checking = false;
   var retryPending = false, reconciling = false, currentStep = 0;
   var retryButton = document.getElementById('retry');
-  retryButton.onclick = function () { if (window.PS4_STANDALONE) { location.replace('index.html'); return; } if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html'); };
-  function say(s) { message.textContent = s; }
+  retryButton.onclick = function () { if (window.PS4_STANDALONE) { location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); return; } if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); };
+  var diagnostics = /(?:[?&])diagnostics=1(?:&|$)/.test(location.search || '');
+  function say(s) { message.textContent = s; if (diagnostics) { var detail = document.getElementById('diagnostics'); detail.hidden = false; detail.textContent = s; } }
   function progress(label, value, failed) {
     var stage = document.getElementById('stage');
     stage.textContent = label;
@@ -53,7 +54,7 @@
       retryPending = false;
       document.getElementById('retry').hidden = true;
       // Change the reopen/bookmark URL without unloading the running payload.
-      try { window.history.replaceState(null, '', 'index.html'); } catch (e) {}
+      try { window.history.replaceState(null, '', 'index.html' + (diagnostics ? '?diagnostics=1' : '')); } catch (e) {}
       say('Jailbreak active. Preparing PKG Manager…');
       progress('Package setup',null);
       setTimeout(function () {
@@ -106,7 +107,7 @@
   }
   function launch() {
     if (started) return; started = true; say('Starting jailbreak…');
-    if (!/\/jb\.html$/.test(location.pathname)) { location.replace('jb.html'); return; }
+    if (!/\/jb\.html$/.test(location.pathname)) { location.replace('jb.html' + (diagnostics ? '?diagnostics=1' : '')); return; }
     progress('Browser exploit',null); say('Running browser exploit…');
     var script = document.createElement('script'); script.type = 'module'; script.src = 'jb.js';
     script.onerror = function () { say('Could not load jailbreak files. Reload to retry.'); progress('Browser exploit',null,true); };
