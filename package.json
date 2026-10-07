@@ -1,1 +1,12 @@
-{"private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test test.mjs"},"engines":{"node":">=22"}}
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test.mjs console-setup.test.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

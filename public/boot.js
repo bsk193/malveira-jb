@@ -3,7 +3,7 @@
   var message = document.getElementById('message'), started = false, ready = false, checking = false;
   var retryPending = false, reconciling = false, currentStep = 0;
   var retryButton = document.getElementById('retry');
-  retryButton.onclick = function () { if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html'); };
+  retryButton.onclick = function () { if (window.PS4_STANDALONE) { location.replace('index.html'); return; } if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html'); };
   function say(s) { message.textContent = s; }
   function progress(label, value, failed) {
     var stage = document.getElementById('stage');
@@ -18,6 +18,7 @@
     retryButton.hidden = !failed || label === 'Unsupported firmware';
   }
   function packageSetup(retry) {
+    if (window.PS4_STANDALONE) return;
     var req = new XMLHttpRequest(); req.open('POST', '/api/ready' + (retry ? '?retry=1' : '')); req.timeout = 6000;
     req.onload = function () { if (req.status === 202) poll(); else {say('Package setup unavailable. Keep the local server running.'); progress('Package setup', null, true);} };
     req.onerror = req.ontimeout = function () {say('Jailbreak finished. Package setup needs the local server.'); progress('Package setup',null,true);};
@@ -30,6 +31,9 @@
   firmware.className = supported ? 'supported' : 'unsupported';
   if (!supported) { say('This page requires PS4 firmware 13.52.'); progress('Unsupported firmware',null,true); return; }
   window.hostEvent = function (tag, detail) {
+    if (tag === 'CONSOLE-SETUP') {
+      var job = JSON.parse(detail); say(job.message); progress(job.stage,job.progress,job.failed); return;
+    }
     if (tag === 'AUTO-RETRY' && !ready) retryPending = true;
     if (!ready) {
       if (tag === 'PRIMITIVE-OK') { progress('Jailbreak',null); say('Browser exploit complete. Preparing system jailbreak…'); }
@@ -54,6 +58,7 @@
     if (!ready && !retryPending && (tag === 'THREW' || tag === 'ERROR' || (tag === 'HOST-FINISHED' && detail === 'failed'))) verifyOutcome();
   };
   function verifyOutcome() {
+    if (window.PS4_STANDALONE) { say('Could not confirm jailbreak'); progress('Status unconfirmed',null,true); return; }
     if (reconciling || ready || retryPending) return;
     reconciling = true;
     say('Confirming console status…'); progress('Console check',null);
@@ -103,6 +108,7 @@
     document.body.appendChild(script);
   }
   function checkThenLaunch() {
+    if (window.PS4_STANDALONE) { launch(); return; }
     if (checking || started || ready) return;
     checking = true; say('Checking jailbreak status…');
     progress('Console check',null);

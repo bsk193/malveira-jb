@@ -3,3 +3,5 @@ node_modules/
 assets/*.part
 .env
 .env.*
+
+_site/

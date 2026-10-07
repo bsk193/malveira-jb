@@ -1,3 +1,4 @@
+import {createTransport, setupConsole} from './console-setup.js';
 import { establishPrimitive } from "./core.js";
 import { installWindowP, pairStatus } from "./mem.js";
 import { int64 } from "./int64.js";
@@ -115,6 +116,7 @@ const SYS = {
   kill: 37,
   getppid: 39,
 };
+if (window.PS4_STANDALONE) Object.assign(SYS, {read:3,fcntl:92,connect:98,sendto:133,poll:209});
 const JSVALUE_UNDEFINED = new int64(0x0a, 0xfffffff7);
 const keepAlive = [];
 let mainMf = null,
@@ -132,7 +134,7 @@ let allDone = false,
   let p = null;
 
   const opened = [];
-  let closeFd = null;
+  let closeFd = null, consoleSetup = null, consoleReady = false;
   try {
     const { key, off } = offsetsFor(navigator.userAgent);
     mark("FW", key || "(not a PS4 UA)");
@@ -520,6 +522,18 @@ let allDone = false,
       const a = new int64(r.lo, r.hi);
       return a.hi === 0 && a.low === 0 ? -1 : p.read4(a) | 0;
     }
+    if (window.PS4_STANDALONE) consoleSetup = async function () {
+      const response = await fetch('manager.json');
+      if (!response.ok) throw Error('Manager configuration unavailable');
+      const config = await response.json();
+      config.elf = new URL(config.elf, location.href).href;
+      config.tile = new URL(config.tile, location.href).href;
+      await setupConsole({
+        transport:createTransport({sc,errno,address:bufAddr}), config,
+        fetchBytes:async url => { const r = await fetch(url); if (!r.ok) throw Error('Manager ELF unavailable'); return new Uint8Array(await r.arrayBuffer()); },
+        notify:job => post('CONSOLE-SETUP',JSON.stringify(job))
+      });
+    };
     const pid = sc(SYS.getpid).i32;
     check(
       "chain-reaches-kernel",
@@ -535,6 +549,7 @@ let allDone = false,
       const uid0 = sc(SYS.getuid).i32;
       const su0 = sc(SYS.setuid, 0).i32;
       if (uid0 === 0 || su0 === 0) {
+        consoleReady = true;
         mark("ALREADY-ROOT", "getuid=" + uid0 + " setuid(0)=" + su0);
         state("ALREADY JAILBROKEN -- nothing to do", "ok");
         return;
@@ -3342,6 +3357,11 @@ let allDone = false,
       if (pinRestore) pinRestore();
     } catch (e4) {
       mark("PIN-RESTORE-THREW", (e4 && e4.message) || String(e4));
+    }
+    // Finish kernel cleanup before setup; restore the userland bridge afterward.
+    if (consoleSetup && mainArmed && (consoleReady || payloadRunning)) {
+      try { await consoleSetup(); }
+      catch (error) { post('CONSOLE-SETUP', JSON.stringify({stage:'Installation stopped',message:error.message,failed:true,done:true})); }
     }
     try {
       if (mainArmed && mainMf && mainOrig && p) {

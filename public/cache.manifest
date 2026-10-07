@@ -4,6 +4,7 @@ CACHE:
 index.html
 jb.html
 boot.js
+console-setup.js
 jb.js
 core.js
 mem.js

@@ -1,23 +1,35 @@
 # Malveira JB PS4
 
-Minimal PS4 13.52 host: three progress segments, an icon retry button and a green success indicator. Bundles GoldHEN and verified PKG Manager X 1.0.2 PS4 assets.
+PS4 13.52 host with three progress segments, an icon retry button, and a green checkmark after PKG Manager tile verification.
 
-## Current working deployment
+## GitHub Pages
 
-Run `node server.mjs` with Node.js 22+ or `./Start.ps1` on Windows. Open the printed LAN address on the PS4. Keep the server on a trusted LAN. The host must reach the console on ports 9090 (BinLoader), 8844 (manager), and optionally 2121 (FTP status). The console must reach the host to download the package.
+Site: https://bsk193.github.io/malveira-jb-ps4/
 
-For a Linux home-lab host, build with `docker build -t malveira-jb-ps4 .` and run with `docker run --rm --network host malveira-jb-ps4`. Host networking preserves the direct LAN client address used for console detection. A bridge/NAT or reverse proxy needs explicit routing configuration before use. This container currently uses its writable layer for release downloads; they are lost when removed and will be downloaded again when needed.
+The Pages build enables console-local setup. After the existing jailbreak chain finishes its kernel cleanup, a userland syscall bridge sends the bundled PS4 ELF to GoldHEN BinLoader at 127.0.0.1:9090 and talks to PKG Manager at 127.0.0.1:8844. No PC or home-lab service is required by this implementation. GoldHEN BinLoader must be enabled. Refused connections are retried for up to 30 seconds; payloads are not resent after an ambiguous transfer.
 
-Run `node --test test.mjs` for verification.
+This console-local transport is new and has not yet been validated on PS4 hardware. Automated tests cover protocol parsing, refusal/partial-write behavior, install/check orchestration, and UI state. They do not prove the native ABI or browser stability on the console. The previously tested Node-hosted version remains available in the original local project.
 
-## GitHub Pages deployment pending
+Reopening still needs the browser primitive for native loopback access; the existing already-root guard skips the kernel exploit when active. If an older manager is running, restart the console normally before updating. Success is shown only after the installed tile version is confirmed.
 
-Only `public/` belongs in a Pages artifact. Never deploy the repository root. GitHub Pages cannot run `server.mjs`.
+## Offline cache
 
-The current UI uses same-origin `/api/console`, `/api/ready`, and `/api/job`. Publishing it unchanged on Pages would break manager setup. Final integration requires the home-lab address, a browser-compatible HTTPS endpoint, narrow cross-origin access controls, and a trustworthy way for the backend to identify and reach the PS4 behind a proxy. A remote friend needs a LAN agent or routed VPN; an internet server cannot reach a private console IP directly.
+Open the root site online first and allow the cache to complete. AppCache stores the HTML, scripts, GoldHEN, firmware patch, manager configuration, ELF and tile. The cache manifest contains a content hash, so deployments refresh it when files change. Offline jailbreak and launching/checking the cached manager are supported by the implementation, subject to PS4 validation and browser cache retention.
 
-Pages is not enabled yet. Confirm public website visibility separately from private repository visibility and verify that the account supports Pages from private repositories.
+A fresh tile install/update still requires internet: the manager downloads its PKG from the Pages URL, and its native HTTP client cannot read the browser's AppCache. Caching the PKG in the browser does not change that. If the tile is already current, setup requires only console-local calls. Release update discovery also requires internet. Do not clear website data if you want to retain the offline cache.
 
-## Provenance
+## Deployment
 
-Host based on psx8/psx8.github.io (1352 directory), GoldHEN by SiSTRo and contributors, PKG Manager X by bsk193 and contributors. See PROVENANCE.txt and assets/release.json for pinned versions and checksums. The browser and kernel exploit mechanics are inherited; the custom layer supplies firmware gating, progress UI and manager setup orchestration.
+.github/workflows/pages.yml runs tests, verifies release asset SHA-256 digests, builds a static _site artifact, and deploys through GitHub Pages Actions. It runs on main pushes, manual dispatch, and a daily release refresh. Only _site is published. Build-time release checks pick the latest stable PKG Manager X release; the console uses the deployed, cached version.
+
+Local checks: node --test test.mjs console-setup.test.mjs
+Build: node scripts/build-pages.mjs
+Refresh release at build: node scripts/build-pages.mjs --latest
+
+## Optional local host
+
+Run node server.mjs with Node.js 22+ or ./Start.ps1 on Windows. The source public HTML does not enable standalone mode; the Pages build adds that switch. The Node host must share a reachable LAN with the PS4. Dockerfile is provided for Linux host networking. Do not expose its unauthenticated local management API publicly.
+
+## Credits
+
+Host based on psx8/psx8.github.io (1352 directory); GoldHEN by SiSTRo and contributors; PKG Manager X by bsk193 and contributors, based on PLK's PKG Manager. See PROVENANCE.txt and assets/release.json. The inherited kernel exploit and GoldHEN binary are unchanged; Pages setup adds console-local package orchestration after kernel cleanup.
