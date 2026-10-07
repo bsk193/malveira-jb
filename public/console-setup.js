@@ -30,8 +30,9 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
     const fd = sc(97, 2, 1, 0).i32;
     if (fd < 0) throw fail('Socket creation failed');
     try {
-      const flags = sc(92, fd, 3, 0).i32;
-      if (flags < 0 || sc(92, fd, 4, flags | 4).i32 < 0) throw fail('Nonblocking socket setup failed');
+      // F_GETFL/F_SETFL is denied in the PS4 browser context. Use the socket ioctl.
+      const nonblock = new ArrayBuffer(4); new DataView(nonblock).setInt32(0, 1, true);
+      if (sc(54, fd, 0x8004667e, address(nonblock)).i32 < 0) throw fail('Nonblocking socket ioctl failed');
       const sa = new Uint8Array(16); sa[0] = 16; sa[1] = 2; sa[2] = port >>> 8; sa[3] = port & 255; sa[4] = 127; sa[7] = 1;
       const rc = sc(98, fd, address(sa.buffer), 16).i32;
       if (rc < 0) {
