@@ -14,7 +14,7 @@ Reopening still needs the browser primitive for native loopback access; the exis
 
 ## Diagnostics
 
-Open https://bsk193.github.io/malveira-jb/diagnostics/ online. It redirects to the latest build-specific diagnostic page to avoid stale scripts. The status text includes a build ID. Normal usage remains text-free except for unsupported-firmware notices.
+Use https://bsk193.github.io/malveira-jb/?diagnostics=1 to show status and errors on the normal page. The flag is preserved through navigation and retry. Remove it for the text-free UI. The old /diagnostics/ bookmark redirects to this flag. Diagnostics shares the normal offline cache; reopen the root online to receive updates.
 
 ## Offline cache
 

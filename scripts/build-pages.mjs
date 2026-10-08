@@ -1,4 +1,5 @@
-import {readFile,writeFile,mkdir,cp,readdir} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,cp,readdir,rm,realpath,lstat} from 'node:fs/promises';
+import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {metadata,compareVersions} from '../server.mjs';
@@ -13,6 +14,11 @@ if(process.argv.includes('--latest')) {
   const latest=await response.json();
   if(!latest.draft&&!latest.prerelease&&compareVersions(latest.tag_name,release.tag_name)>=0)release=latest;
 }
+try {
+  const info=await lstat(out);
+  if(info.isSymbolicLink() || await realpath(out)!==path.join(await realpath(root),'_site'))throw Error('Unexpected build output path');
+  await rm(out,{recursive:true});
+} catch(error) { if(error.code!=='ENOENT')throw error; }
 await mkdir(out,{recursive:true});await cp(root+'public',out,{recursive:true});
 await mkdir(out+'packages',{recursive:true});
 const select=ending=>{
@@ -36,37 +42,11 @@ await writeFile(out+'pages-mode.js','window.PS4_STANDALONE = true;\n');
 for(const name of ['index.html','jb.html']){
   let html=await readFile(out+name,'utf8');html=html.replace('<script src="boot.js">','<script src="pages-mode.js"></script><script src="boot.js">');await writeFile(out+name,html);
 }
-// Separate uncached URLs avoid an older AppCache swallowing a query-only diagnostic request.
+// Preserve the short diagnostic bookmark; diagnostics runs on the normal site.
 await mkdir(out+'diagnostics',{recursive:true});
-for (const entry of await readdir(root+'public',{withFileTypes:true})) {
-  if (entry.name === 'cache.manifest') continue;
-  await cp(root+'public/'+entry.name,out+'diagnostics/'+entry.name,{recursive:true});
-}
-const diagnosticConfig=JSON.parse(await readFile(out+'manager.json','utf8'));
-diagnosticConfig.elf='../'+diagnosticConfig.elf; diagnosticConfig.tile='../'+diagnosticConfig.tile;
-await writeFile(out+'diagnostics/manager.json',JSON.stringify(diagnosticConfig));
-for (const name of ['index.html','jb.html']) {
-  let html=await readFile(out+'diagnostics/'+name,'utf8');
-  html=html.replace(' manifest="cache.manifest"','').replace('<script src="boot.js">','<script>window.PS4_STANDALONE=true;window.PS4_DIAGNOSTICS=true;</script><script src="boot.js">');
-  html=html.replace('<p id="diagnostics" role="status" hidden></p>','<p id="diagnostics" role="status">Diagnostics loading…</p>');
-  await writeFile(out+'diagnostics/'+name,html);
-}
-// A new directory for each diagnostic build bypasses both HTTP and module caches.
-const diagnosticHash=createHash('sha256');
-for(const name of ['boot.js','jb.js','console-setup.js','jailbreak-status.js'])diagnosticHash.update(await readFile(root+'public/'+name));
-const diagnosticId=diagnosticHash.digest('hex').slice(0,12);
-const diagnosticDirectory='diagnostics-'+diagnosticId;
-await cp(out+'diagnostics',out+diagnosticDirectory,{recursive:true});
-for(const name of ['index.html','jb.html']){
-  const path=out+diagnosticDirectory+'/'+name;
-  let html=await readFile(path,'utf8');
-  html=html.replace('window.PS4_DIAGNOSTICS=true;','window.PS4_DIAGNOSTICS=true;window.PS4_DIAGNOSTIC_BUILD="'+diagnosticId+'";');
-  await writeFile(path,html);
-}
-await writeFile(out+'diagnostic-build.json',JSON.stringify({build:diagnosticId,url:diagnosticDirectory+'/jb.html'}));
-// Stable entry point resolves a fresh, content-addressed diagnostic build.
-await writeFile(out+'diagnostics/index.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Malveira diagnostics</title><style>body{background:#101218;color:#eef0f6;font:20px Arial;text-align:center;padding:20vh 24px}</style><p id="status">Opening current diagnostics…</p><script>(function(){var r=new XMLHttpRequest();r.open('GET','../diagnostic-build.json?t='+Date.now());r.timeout=10000;function fail(){document.getElementById('status').textContent='Could not load diagnostics. Connect to the internet and reload.';}r.onload=function(){try{var d=JSON.parse(r.responseText);if(r.status!==200||!/^diagnostics-[a-f0-9]{12}\\/jb\\.html$/.test(d.url))throw Error();location.replace('../'+d.url);}catch(e){fail();}};r.onerror=r.ontimeout=fail;r.send();})();</script></html>`);
-
+const redirect='<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../?diagnostics=1"><title>Diagnostics</title><a href="../?diagnostics=1">Open diagnostics</a><script>location.replace("../?diagnostics=1");</script></html>';
+await writeFile(out+'diagnostics/index.html',redirect);
+await writeFile(out+'diagnostics/jb.html',redirect);
 await writeFile(out+'.nojekyll','');
 const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!/^diagnostics(?:-|\/)/.test(n)).sort();
 const hash=createHash('sha256');for(const name of files){hash.update(name);hash.update(await readFile(out+name));}
