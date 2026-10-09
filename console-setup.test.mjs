@@ -59,6 +59,39 @@ test('installed version comparison accepts the real PS4 v prefix',()=>{
  assert.throws(()=>compare('unknown','01.02'));
 });
 
+test('refused services report their port after bounded waits',async()=>{
+ for(const port of [9090,8844]){
+  let sockets=0,closed=0,waited=0;
+  const transport=createTransport({address:b=>b,errno:()=>61,wait:async ms=>{waited+=ms;},sc:(num)=>{
+   if(num===97)return {i32:++sockets};
+   if(num===98)return {i32:-1};
+   if(num===6)closed++;
+   if(num===133)assert.fail('Refused connections must never send');
+   return {i32:0};
+  }});
+  await assert.rejects(port===9090?transport.payload(new Uint8Array(4)):transport.request('/api/status'),error=>{
+   assert.equal(error.nativeCode,61);
+   assert.match(error.message,new RegExp('127.0.0.1:'+port));
+   assert.match(error.message,/then retry/);
+   return true;
+  });
+  assert.equal(waited,port===9090?60000:10000);assert.equal(closed,sockets);
+ }
+});
+
+test('manager POST waits for connection but never retries after a send failure',async()=>{
+ let sockets=0,closed=0,sends=0,err=61,waits=0;
+ const transport=createTransport({address:b=>b,errno:()=>err,wait:async()=>{waits++;},sc:(num)=>{
+  if(num===97)return {i32:++sockets};
+  if(num===98)return {i32:sockets<3?-1:0};
+  if(num===133){sends++;err=54;return {i32:-1};}
+  if(num===6)closed++;
+  return {i32:0};
+ }});
+ await assert.rejects(transport.request('/api/install',{path:config.tile}),/send failed/);
+ assert.equal(sockets,3);assert.equal(closed,3);assert.equal(waits,2);assert.equal(sends,1);
+});
+
 test('existing jailbreak skips credential mutation and detects non-root HEN without hiding errors',async()=>{
  const {alreadyJailbroken}=await import('./public/jailbreak-status.js');
  const sys={getuid:24,setuid:23};

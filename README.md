@@ -6,7 +6,7 @@ PS4 13.52 host with three progress segments, an icon retry button, and a green c
 
 Site: https://bsk193.github.io/malveira-jb/
 
-The Pages build enables console-local setup. After the existing jailbreak chain finishes its kernel cleanup, a userland syscall bridge sends the bundled PS4 ELF to GoldHEN BinLoader at 127.0.0.1:9090 and talks to PKG Manager at 127.0.0.1:8844. No PC or home-lab service is required by this implementation. GoldHEN BinLoader must be enabled. Refused connections are retried for up to 30 seconds; payloads are not resent after an ambiguous transfer.
+The Pages build enables console-local setup. After the existing jailbreak chain finishes its kernel cleanup, a userland syscall bridge sends the bundled PS4 ELF to GoldHEN BinLoader at 127.0.0.1:9090 and talks to PKG Manager at 127.0.0.1:8844. No PC or home-lab service is required by this implementation. GoldHEN BinLoader must be enabled. Refused connections are retried for up to 60 seconds for BinLoader and 10 seconds for each manager request. Retries happen only before sending bytes; payloads and installation requests are not resent after an ambiguous transfer. Diagnostics names the service and port when a connection fails.
 
 User testing on PS4 13.52 confirmed fresh jailbreaks with and without an installed tile, reopening with an installed tile, and already-jailbroken bootstrap without a tile after switching to the PS4 SO_NBIO socket option. The automated suite additionally checks protocol parsing, version handling, retry behavior and UI transitions. This does not guarantee every exploit attempt succeeds.
 

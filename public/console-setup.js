@@ -54,7 +54,27 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
         if (socketError) throw Object.assign(Error('Loopback connection failed (errno ' + socketError + ')'), {nativeCode: socketError});
       }
       return fd;
-    } catch (error) { sc(6, fd); throw error; }
+    } catch (error) {
+      sc(6, fd);
+      const service = port === 9090 ? 'GoldHEN BinLoader' : 'PKG Manager';
+      error.message = service + ' (127.0.0.1:' + port + '): ' + error.message;
+      throw error;
+    }
+  }
+  async function connectWhenReady(port, retries) {
+    for (let i = 0; ; i++) {
+      try { return await connect(port); }
+      catch (error) {
+        if (error.nativeCode !== 61) throw error;
+        if (i >= retries) {
+          error.message += port === 9090
+            ? '. Enable GoldHEN BinLoader in GoldHEN settings, then retry.'
+            : '. Manager is not accepting connections. Reopen its tile, then retry.';
+          throw error;
+        }
+        await wait(2000);
+      }
+    }
   }
   async function send(fd, bytes) {
     const block = new Uint8Array(16384), ptr = address(block.buffer);
@@ -70,11 +90,7 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
   }
   return {
     async payload(bytes) {
-      let fd;
-      for (let i = 0; ; i++) {
-        try { fd = await connect(9090); break; }
-        catch (error) { if (error.nativeCode !== 61 || i >= 15) throw error; await wait(2000); }
-      }
+      const fd = await connectWhenReady(9090, 30);
       try { await send(fd, bytes); } finally { sc(6, fd); }
     },
     async request(path, body) {
@@ -83,7 +99,8 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
       const text = (body ? 'POST ' : 'GET ') + path + ' HTTP/1.1\r\nHost: 127.0.0.1:8844\r\nConnection: close\r\n' + (body ? 'Content-Type: application/json\r\nContent-Length: ' + data.length + '\r\n' : '') + '\r\n' + data;
       if (/[^\x00-\x7f]/.test(text)) throw Error('Non-ASCII request');
       const bytes = new Uint8Array(text.length); for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
-      const fd = await connect(8844);
+      // Retry only before sending any bytes, including for POST /api/install.
+      const fd = await connectWhenReady(8844, 5);
       try {
         await send(fd, bytes);
         const block = new Uint8Array(8192), ptr = address(block.buffer); let raw = '', deadline = now() + 15000;
