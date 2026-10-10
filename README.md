@@ -18,9 +18,9 @@ Use https://bsk193.github.io/malveira-jb/?diagnostics=1 to show status and error
 
 ## Offline cache
 
-Open the root site online first and allow the cache to complete. AppCache stores the HTML, scripts, GoldHEN, firmware patch, manager configuration, ELF and tile. The cache manifest contains a content hash, so deployments refresh it when files change. Offline jailbreak and launching/checking the cached manager are supported by the implementation, subject to browser cache retention; offline operation still needs a dedicated console test.
+Open the root site online first and allow the cache to complete. AppCache stores the HTML, scripts, GoldHEN, firmware patch, manager configuration and ELF. The cache manifest contains a content hash, so deployments refresh it when files change. Offline jailbreak and launching/checking the cached manager are supported by the implementation, subject to browser cache retention; offline operation still needs a dedicated console test.
 
-A fresh tile install/update still requires internet: the manager downloads its PKG from the Pages URL, and its native HTTP client cannot read the browser's AppCache. Caching the PKG in the browser does not change that. If the tile is already current, setup requires only console-local calls. Release update discovery also requires internet. Do not clear website data if you want to retain the offline cache.
+A fresh tile install/update still requires internet: the manager downloads its PKG from the Pages URL, and its native HTTP client cannot read the browser's AppCache. The tile PKG is therefore excluded from the browser cache; it remains available on the site for the native installer. If the tile is already current, setup requires only console-local calls. Release update discovery also requires internet. Do not clear website data if you want to retain the offline cache.
 
 ## Deployment
 

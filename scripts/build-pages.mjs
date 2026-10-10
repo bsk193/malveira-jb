@@ -50,5 +50,7 @@ await writeFile(out+'diagnostics/jb.html',redirect);
 await writeFile(out+'.nojekyll','');
 const files=(await readdir(out,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>(e.parentPath+'/'+e.name).replaceAll('\\','/').slice(out.replaceAll('\\','/').length)).filter(n=>n!=='cache.manifest'&&n!=='.nojekyll'&&!/^diagnostics(?:-|\/)/.test(n)).sort();
 const hash=createHash('sha256');for(const name of files){hash.update(name);hash.update(await readFile(out+name));}
-await writeFile(out+'cache.manifest','CACHE MANIFEST\n# '+hash.digest('hex')+'\nCACHE:\n'+files.join('\n')+'\nNETWORK:\n*\n');
-console.log('Built Pages '+release.tag_name+'; tile '+meta.app_version+'; '+files.length+' cached files.');
+// The native installer cannot read AppCache; keep the tile available over HTTP only.
+const cachedFiles=files.filter(name=>!name.endsWith('.pkg'));
+await writeFile(out+'cache.manifest','CACHE MANIFEST\n# '+hash.digest('hex')+'\nCACHE:\n'+cachedFiles.join('\n')+'\nNETWORK:\n*\n');
+console.log('Built Pages '+release.tag_name+'; tile '+meta.app_version+'; '+cachedFiles.length+' cached files.');

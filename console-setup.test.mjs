@@ -59,6 +59,28 @@ test('installed version comparison accepts the real PS4 v prefix',()=>{
  assert.throws(()=>compare('unknown','01.02'));
 });
 
+test('manager responses decode across blocks and stop at the size cap',async()=>{
+ for(const oversized of [false,true]){
+  const body=JSON.stringify({status:'x'.repeat(oversized?270000:17000)});
+  const response='HTTP/1.1 200 OK\r\nContent-Length: '+body.length+'\r\n\r\n'+body;
+  let offset=0,closed=0;
+  const transport=createTransport({address:b=>b,errno:()=>0,wait:async()=>{},sc:(num,...args)=>{
+   if(num===97)return {i32:7};
+   if(num===133)return {i32:args[2]};
+   if(num===3){
+    const n=Math.min(args[2],response.length-offset),buffer=new Uint8Array(args[1]);
+    for(let i=0;i<n;i++)buffer[i]=response.charCodeAt(offset++);
+    return {i32:n};
+   }
+   if(num===6)closed++;
+   return {i32:0};
+  }});
+  if(oversized)await assert.rejects(transport.request('/api/status'),/response too large/);
+  else assert.deepEqual(await transport.request('/api/status'),JSON.parse(body));
+  assert.equal(closed,1);
+ }
+});
+
 test('refused services report their port after bounded waits',async()=>{
  for(const port of [9090,8844]){
   let sockets=0,closed=0,waited=0;

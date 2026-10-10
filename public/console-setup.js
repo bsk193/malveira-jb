@@ -103,16 +103,22 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
       const fd = await connectWhenReady(8844, 5);
       try {
         await send(fd, bytes);
-        const block = new Uint8Array(8192), ptr = address(block.buffer); let raw = '', deadline = now() + 15000;
+        const block = new Uint8Array(8192), ptr = address(block.buffer);
+        const chunks = []; let received = 0, deadline = now() + 15000;
         for (;;) {
           const n = sc(3, fd, ptr, block.length).i32;
           if (!n) break;
-          if (n > 0) { for (let i = 0; i < n; i++) raw += String.fromCharCode(block[i]); if (raw.length > 262144) throw Error('Manager response too large'); }
+          if (n > 0) {
+            received += n;
+            if (received > 262144) throw Error('Manager response too large');
+            // Decode one bounded block instead of retaining a character-by-character rope.
+            chunks.push(String.fromCharCode.apply(null, block.subarray(0, n)));
+          }
           else if (errno() !== 35 && errno() !== 4) throw fail('Loopback receive failed');
           if (now() >= deadline) throw Error('Manager response timed out');
           await wait(25);
         }
-        const result = parseResponse(raw);
+        const result = parseResponse(chunks.join(''));
         return path === '/api/version' ? result.trim() : JSON.parse(result);
       } finally { sc(6, fd); }
     }
