@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var message = document.getElementById('message'), started = false, ready = false, checking = false;
-  var retryPending = false, reconciling = false, currentStep = 0;
+  var retryPending = false, reconciling = false, currentStep = 0, consoleSetupSeen = false;
   var retryButton = document.getElementById('retry');
   retryButton.onclick = function () { if (window.PS4_STANDALONE) { location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); return; } if (ready) { retryButton.hidden = true; progress('Package setup',null); packageSetup(true); } else location.replace('index.html' + (diagnostics ? '?diagnostics=1' : '')); };
   var diagnostics = /(?:[?&])diagnostics=1(?:&|$)/.test(location.search || '');
@@ -39,7 +39,13 @@
   }
   window.hostEvent = function (tag, detail) {
     if (tag === 'CONSOLE-SETUP') {
-      var job = JSON.parse(detail); say(job.message); progress(job.stage,job.progress,job.failed); return;
+      consoleSetupSeen = true;
+      var job = JSON.parse(detail);
+      if (job.serviceReady === true) {
+        ready = true; retryPending = false;
+        try { window.history.replaceState(null, '', 'index.html' + (diagnostics ? '?diagnostics=1' : '')); } catch (e) {}
+      }
+      say(job.message); progress(job.stage,job.progress,job.failed); return;
     }
     if (tag === 'AUTO-RETRY' && !ready) retryPending = true;
     if (!ready) {
@@ -50,6 +56,11 @@
       else if (tag === 'AUTO-RETRY') { progress('Browser exploit',null); say('Retrying jailbreak…'); }
     }
     if (tag === 'ALREADY-ROOT' || (tag === 'HOST-FINISHED' && detail === 'ok') || (tag === 'PROOF-OK' && /^PAYLOAD-RUNNING\b/.test(detail))) {
+      if (window.PS4_STANDALONE) {
+        // Root credentials and a created payload thread do not prove HEN services are ready.
+        if (!consoleSetupSeen && !ready) { progress('Jailbreak',null); say('Verifying console services. GoldHEN loading is not yet confirmed…'); }
+        return;
+      }
       if (ready) return;
       ready = true;
       retryPending = false;

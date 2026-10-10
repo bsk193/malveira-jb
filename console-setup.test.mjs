@@ -34,6 +34,13 @@ test('manager bootstrap sends one payload and waits for its version',async()=>{
   }}});
   assert.equal(loads,1);assert.equal(versions,3);
 });
+
+test('refused BinLoader never confirms GoldHEN readiness',async()=>{
+ const notices=[];
+ await assert.rejects(setConsole(),/GoldHEN readiness not confirmed/);
+ assert.equal(notices.some(n=>n.serviceReady),false);
+ async function setConsole(){return setupConsole({config,notify:n=>notices.push(n),wait:async()=>{},fetchBytes:async()=>new Uint8Array([127,69,76,70]),transport:{request:async()=>{throw Error('unavailable');},payload:async()=>{throw Object.assign(Error('refused'),{nativeCode:61});}}});}
+});
 test('native transport retries refused connections only and handles partial writes',async()=>{
   for(const mode of ['late','reset']){
     let sockets=0,closed=0,err=0,bytes=0,waits=0;

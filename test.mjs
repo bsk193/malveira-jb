@@ -287,3 +287,23 @@ test('three-step UI advances on real milestones and shows success only after pac
   for(const id of ['step0','step1','step2'])assert.equal(nodes[id].className,'segment done');
   assert.equal(nodes.success.hidden,false);assert.equal(nodes.retry.hidden,true);
 });
+
+test('Pages keeps jailbreak unconfirmed until services respond and preserves failure after thread exit', async () => {
+ for (const confirmed of [false,true]) {
+  const nodes={};
+  const context={navigator:{userAgent:'PlayStation 4 13.52'},window:{PS4_STANDALONE:true},location:{pathname:'/jb.html',search:'?diagnostics=1'},setTimeout:()=>{},document:{getElementById:id=>nodes[id]||={},createElement:()=>({}),body:{appendChild(){}}}};
+  vm.runInNewContext(await readFile(new URL('./public/boot.js',import.meta.url),'utf8'),context);
+  const event=context.window.hostEvent;
+  event('PRIMITIVE-OK','');
+  for(const [tag,detail] of [['PROOF-OK','PAYLOAD-RUNNING rc=0'],['ALREADY-ROOT',''],['HOST-FINISHED','ok']]) {
+   event(tag,detail);
+   assert.equal(nodes.step1.className,'segment active');assert.equal(nodes.step2.className,'segment');
+  }
+  if(confirmed) event('CONSOLE-SETUP',JSON.stringify({serviceReady:true,stage:'Package setup',message:'BinLoader connected'}));
+  event('CONSOLE-SETUP',JSON.stringify({stage:'Installation stopped',message:'Service unavailable',failed:true}));
+  event('HOST-FINISHED','ok');
+  assert.equal(nodes.step1.className,confirmed?'segment done':'segment error');
+  assert.equal(nodes.step2.className,confirmed?'segment error':'segment');
+  assert.equal(nodes.diagnostics.textContent,'Service unavailable');assert.equal(nodes.success.hidden,true);
+ }
+});

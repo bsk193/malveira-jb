@@ -89,9 +89,9 @@ export function createTransport({sc, errno, address, wait = pause, now = () => D
     }
   }
   return {
-    async payload(bytes) {
+    async payload(bytes, onConnected) {
       const fd = await connectWhenReady(9090, 30);
-      try { await send(fd, bytes); } finally { sc(6, fd); }
+      try { if (onConnected) onConnected(); await send(fd, bytes); } finally { sc(6, fd); }
     },
     async request(path, body) {
       if (!/^\/api\/[a-z/]+$/.test(path)) throw Error('Unexpected API path');
@@ -136,17 +136,25 @@ export function compare(a, b) {
 
 export async function setupConsole({transport, config, fetchBytes, notify, wait = pause}) {
   const meta = {title_id:'PKGX00001',app_version:config.appVersion,content_id:'IV0000-PKGX00001_00-PKGMANAGERX00000',pkg_type:'base',platform:'ps4'};
-  notify({stage:'Package setup',message:'Checking PKG Manager',progress:null});
+  const serviceReady = message => notify({stage:'Package setup',message,progress:null,serviceReady:true});
+  notify({stage:'Jailbreak',message:'Verifying console services. GoldHEN loading is not yet confirmed…',progress:null});
   let version;
   try { version = await transport.request('/api/version'); } catch (_) {}
+  if (version) serviceReady('PKG Manager responded. Checking installed version…');
   if (version && version !== config.version) throw Error('Another manager version is running. Restart the PS4 before updating.');
   if (!version) {
     const elf = await fetchBytes(config.elf);
     if (elf.length !== config.elfSize || elf[0] !== 127 || elf[1] !== 69 || elf[2] !== 76 || elf[3] !== 70) throw Error('Invalid manager ELF');
-    notify({stage:'Package setup',message:'Waiting for BinLoader',progress:null});
-    await transport.payload(elf);
+    notify({stage:'Jailbreak',message:'Waiting for BinLoader. GoldHEN loading is not yet confirmed…',progress:null});
+    try {
+      await transport.payload(elf, () => serviceReady('BinLoader connected. Starting PKG Manager…'));
+    } catch (error) {
+      if (error.nativeCode === 61) error.message = 'GoldHEN readiness not confirmed: BinLoader is unavailable on port 9090. GoldHEN may not have loaded, or BinLoader may be disabled. Check GoldHEN in PS4 Settings. ' + error.message;
+      throw error;
+    }
     for (let i = 0; i < 15; i++) { await wait(2000); try { version = await transport.request('/api/version'); if (version === config.version) break; } catch (_) {} }
     if (version !== config.version) throw Error('Manager did not start with the expected version');
+    serviceReady('PKG Manager responded. Checking installed version…');
   }
   const check = await transport.request('/api/upload/check', meta);
   if (check.is_installed && compare(check.installed_version, config.appVersion) >= 0) { notify({stage:'Ready',message:'Ready',progress:100,done:true}); return; }

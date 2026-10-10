@@ -12,6 +12,8 @@ User testing on PS4 13.52 confirmed fresh jailbreaks with and without an install
 
 Reopening still needs the browser primitive for native loopback access; the existing already-root guard skips the kernel exploit when active. If an older manager is running, restart the console normally before updating. Success is shown only after the installed tile version is confirmed.
 
+On Pages, root credentials and GoldHEN payload thread creation do not complete the second progress segment. Setup advances only when the existing manager responds or BinLoader accepts the payload connection. If neither is available, jailbreak readiness stays unconfirmed. This service check cannot distinguish GoldHEN failing to load from BinLoader being disabled; diagnostics asks the user to check GoldHEN in Settings.
+
 ## Diagnostics
 
 Use https://bsk193.github.io/malveira-jb/?diagnostics=1 to show status and errors on the normal page. The flag is preserved through navigation and retry. Remove it for the text-free UI. The old /diagnostics/ bookmark redirects to this flag. Diagnostics shares the normal offline cache; reopen the root online to receive updates.
