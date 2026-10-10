@@ -10,6 +10,11 @@ import {createServer as httpServer} from 'node:http';
 class InactiveXHR {
   open() {} send() {this.status=200; this.responseText='{"active":false}'; this.onload();}
 }
+
+test('13.52 kernel patch matches the pinned upstream AIO fix', async () => {
+  const patch=await readFile(new URL('./public/patches/1352.bin',import.meta.url));
+  assert.equal(createHash('sha256').update(patch).digest('hex'),'adfb9771904f71cd1f5a82cbded8ac46c7ffeb3df974579535cf711904ac347e');
+});
 test('retry cleanup never displays failure and confirmed success wins over late errors', async () => {
   const timers=[],nodes={};
   const context={XMLHttpRequest:InactiveXHR,navigator:{userAgent:'PlayStation 4 13.52',onLine:true},window:{},

@@ -20,6 +20,7 @@ try {
   await rm(out,{recursive:true});
 } catch(error) { if(error.code!=='ENOENT')throw error; }
 await mkdir(out,{recursive:true});await cp(root+'public',out,{recursive:true});
+await cp(root+'LICENSE.raw13g',out+'LICENSE.raw13g');
 await mkdir(out+'packages',{recursive:true});
 const select=ending=>{
   const asset=release.assets.find(a=>a.name.endsWith(ending));

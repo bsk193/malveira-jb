@@ -1,4 +1,9 @@
 Host source commit: ea85cfe4434ddc38943a9cb12e255a2b2a64a190
+Upstream merge: raw13g/raw13g.github.io at 9ba2f0719591d6900d91aba6cc5291f8fff97e6d
+AIO fix: ef1670a8db0beb49b942dfacced6edbc5225f47c
+Stability update: b5ccefe304f6047d391f58e66d535fa7d2bc52e7
+13.52 patch SHA256: adfb9771904f71cd1f5a82cbded8ac46c7ffeb3df974579535cf711904ac347e
+Merge adaptations: retained strict 13.52 gate, local host events, diagnostics/progress verification, existing jailbreak guard without automatic GoldHEN relaunch, and console-local PKG Manager setup after kernel cleanup. Upstream page UI/cache files are replaced by our existing UI and generated cache manifest. Other firmware patches are intentionally excluded. See LICENSE.raw13g.
 PKG Manager X source/release commit: 7ec4575be7d610f1fd2c03376b0f8798e5b0e117 (x-v1.0.2)
 GoldHEN SHA256: df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12
 Custom modifications: minimal UI and offline auto-launch; strict 13.52 gate; local status callbacks and terminal completion callback; Node companion for official PKG Manager release loading, install and version checking.

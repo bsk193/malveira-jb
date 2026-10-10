@@ -8,7 +8,7 @@ Site: https://bsk193.github.io/malveira-jb/
 
 The Pages build enables console-local setup. After the existing jailbreak chain finishes its kernel cleanup, a userland syscall bridge sends the bundled PS4 ELF to GoldHEN BinLoader at 127.0.0.1:9090 and talks to PKG Manager at 127.0.0.1:8844. No PC or home-lab service is required by this implementation. GoldHEN BinLoader must be enabled. Refused connections are retried for up to 60 seconds for BinLoader and 10 seconds for each manager request. Retries happen only before sending bytes; payloads and installation requests are not resent after an ambiguous transfer. Diagnostics names the service and port when a connection fails.
 
-User testing on PS4 13.52 confirmed fresh jailbreaks with and without an installed tile, reopening with an installed tile, and already-jailbroken bootstrap without a tile after switching to the PS4 SO_NBIO socket option. The automated suite additionally checks protocol parsing, version handling, retry behavior and UI transitions. This does not guarantee every exploit attempt succeeds.
+User testing of the earlier build on PS4 13.52 confirmed fresh jailbreaks with and without an installed tile, reopening with an installed tile, and already-jailbroken bootstrap without a tile after switching to the PS4 SO_NBIO socket option. The October 10 upstream AIO/stability merge still requires console validation. The automated suite additionally checks protocol parsing, version handling, retry behavior and UI transitions. This does not guarantee every exploit attempt succeeds.
 
 Reopening still needs the browser primitive for native loopback access; the existing already-root guard skips the kernel exploit when active. If an older manager is running, restart the console normally before updating. Success is shown only after the installed tile version is confirmed.
 
@@ -38,7 +38,7 @@ Run node server.mjs with Node.js 22+ or ./Start.ps1 on Windows. The source publi
 
 ## Credits
 
-Host based on psx8/psx8.github.io (1352 directory); GoldHEN by SiSTRo and contributors; PKG Manager X by bsk193 and contributors, based on PLK's PKG Manager. See PROVENANCE.txt and assets/release.json. The inherited kernel exploit and GoldHEN binary are unchanged; Pages setup adds console-local package orchestration after kernel cleanup.
+Host based on psx8/psx8.github.io (1352 directory), with raw13g's September 22 AIO patch and September 25 stability update merged on October 10. GoldHEN by SiSTRo and contributors; PKG Manager X by bsk193 and contributors, based on PLK's PKG Manager. See PROVENANCE.txt, LICENSE.raw13g and assets/release.json. Our existing jailbreak guard avoids automatically reloading GoldHEN; Pages setup adds console-local package orchestration after upstream kernel cleanup. The GoldHEN binary is unchanged.
 
 ## Local workspace
 
